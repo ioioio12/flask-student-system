@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "name": "Иван Иванов",
+    "course": 1,
+    "status": "studying",
+    "description": "Backend-разработчик, увлекается Python и SQL",
+    "fullInfo": "Студент 1 курса, изучает Python и базы данных.",
+    "skills": [
+      "Python",
+      "SQL",
+      "PostgreSQL"
+    ],
+    "links": {
+      "github": "https://github.com/ivanov",
+      "portfolio": "https://ivanov-portfolio.ru"
+    },
+    "photo": "/images/student1.jpg",
+    "createdAt": "2025-12-16T13:17:18.455261",
+    "updatedAt": "2025-12-17T11:57:13.129580",
+    "userId": 1
+  },
+  {
+    "id": 2,
+    "name": "Мария",
+    "course": 3,
+    "status": "studying",
+    "description": "Frontend-разработчик, специалист по React",
+    "fullInfo": "Студентка 3 курса, создала несколько проектов на React.",
+    "skills": [
+      "JavaScript",
+      "React",
+      "HTML",
+      "CSS"
+    ],
+    "links": {
+      "github": "https://github.com/maria",
+      "portfolio": "https://maria-dev.ru"
+    },
+    "photo": "/images/student2.jpg",
+    "createdAt": "2025-12-16T13:17:18.455265",
+    "updatedAt": "2025-12-17T11:57:25.178840",
+    "userId": 2
+  },
+  {
+    "id": 3,
+    "name": "павпвп",
+    "course": 4,
+    "status": "studying",
+    "description": "впвпв",
+    "fullInfo": "пвапвпвпвпв",
+    "skills": [],
+    "links": {
+      "github": null,
+      "portfolio": null
+    },
+    "photo": "/images/default.jpg",
+    "createdAt": "2025-12-17T11:55:11.450189",
+    "updatedAt": "2025-12-17T11:55:11.450194",
+    "userId": null
+  }
+]

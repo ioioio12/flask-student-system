@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель</title>
+
+    <!-- Стили -->
+    <link rel="stylesheet" href="admin.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Форма входа -->
+        <div id="login-section" class="login-section">
+            <div class="login-box">
+                <h2><i class="fas fa-lock"></i> Вход в админку</h2>
+                <p>Введите данные администратора</p>
+
+                <div id="message" class="message" style="display: none;"></div>
+
+                <div class="form-group">
+                    <label>Логин:</label>
+                    <input type="text" id="login-username" placeholder="Логин" value="admin">
+                </div>
+
+                <div class="form-group">
+                    <label>Пароль:</label>
+                    <input type="password" id="login-password" placeholder="Пароль" value="admin123">
+                </div>
+
+                <button id="login-btn" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Войти
+                </button>
+
+                <div class="login-info">
+                    <p><strong>Для теста:</strong></p>
+                    <p><i class="fas fa-user-shield"></i> Логин: <strong>admin</strong></p>
+                    <p><i class="fas fa-key"></i> Пароль: <strong>admin123</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Админ-панель -->
+        <div id="admin-content" class="admin-content">
+            <!-- Шапка -->
+            <div class="admin-header">
+                <div>
+                    <h1><i class="fas fa-cogs"></i> Админ-панель</h1>
+                    <p>Управление студентами и пользователями</p>
+                </div>
+                <button id="logout-btn" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i> Выйти
+                </button>
+            </div>
+
+            <!-- Навигация -->
+            <div class="admin-nav">
+                <button class="admin-btn active" data-section="students">
+                    <i class="fas fa-users"></i> Студенты
+                </button>
+                <button class="admin-btn" data-section="users">
+                    <i class="fas fa-user-cog"></i> Пользователи
+                </button>
+                <button class="admin-btn" data-section="stats">
+                    <i class="fas fa-chart-bar"></i> Статистика
+                </button>
+            </div>
+
+            <!-- Секция студентов -->
+            <div id="students-section" class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-user-graduate"></i> Управление студентами</h2>
+                    <button id="add-student-btn" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Добавить студента
+                    </button>
+                </div>
+
+                <!-- Фильтры -->
+                <div class="filter-controls">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="search-students" placeholder="Поиск по имени, описанию или навыкам...">
+                    </div>
+
+                    <div class="filter-group">
+                        <select id="status-filter">
+                            <option value="">Все статусы</option>
+                            <option value="studying">Обучается</option>
+                            <option value="graduated">Выпустился</option>
+                            <option value="expelled">Отчислен</option>
+                            <option value="academic_leave">Академотпуск</option>
+                        </select>
+
+                        <select id="course-filter">
+                            <option value="">Все курсы</option>
+                            <option value="1">1 курс</option>
+                            <option value="2">2 курс</option>
+                            <option value="3">3 курс</option>
+                            <option value="4">4 курс</option>
+                        </select>
+
+                        <button id="clear-filters" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Очистить фильтры
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Таблица студентов -->
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Фото</th>
+                                <th>Имя</th>
+                                <th>Курс</th>
+                                <th>Статус</th>
+                                <th>Навыки</th>
+                                <th>Обновлено</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="students-table">
+                            <!-- Данные загрузятся сюда -->
+                            <tr>
+                                <td colspan="8" class="empty-state">
+                                    <i class="fas fa-spinner fa-spin"></i> Загрузка студентов...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Секция пользователей -->
+            <div id="users-section" class="admin-section" style="display: none;">
+                <div class="section-header">
+                    <h2><i class="fas fa-user-cog"></i> Управление пользователями</h2>
+                    <button id="add-user-btn" class="btn btn-success">
+                        <i class="fas fa-user-plus"></i> Добавить пользователя
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Логин</th>
+                                <th>Роль</th>
+                                <th>Email</th>
+                                <th>Дата регистрации</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table">
+                            <!-- Данные загрузятся сюда -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Секция статистики -->
+            <div id="stats-section" class="admin-section" style="display: none;">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-bar"></i> Статистика</h2>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-students">0</h3>
+                            <p>Всего студентов</p>
+                            <small class="stat-percent">-</small>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #00b09b, #96c93d);">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="studying-count">0</h3>
+                            <p>Обучаются</p>
+                            <small class="stat-percent">-</small>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #ff9a9e, #fad0c4);">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="graduated-count">0</h3>
+                            <p>Выпустились</p>
+                            <small class="stat-percent">-</small>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #a18cd1, #fbc2eb);">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="activity-count">0</h3>
+                            <p>Активность</p>
+                            <small class="stat-change">-</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- График распределения по курсам -->
+                <div class="chart-container">
+                    <h3><i class="fas fa-chart-pie"></i> Распределение по курсам</h3>
+                    <div id="course-chart" style="height: 300px;">
+                        <!-- График загрузится сюда -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для студента -->
+    <div id="student-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Добавить студента</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="student-modal-form">
+                <div class="modal-body">
+                    <!-- Поля формы для студента -->
+                    <div class="form-group">
+                        <label>Имя и фамилия *</label>
+                        <input type="text" id="modal-name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Курс *</label>
+                        <select id="modal-course" required>
+                            <option value="1">1 курс</option>
+                            <option value="2">2 курс</option>
+                            <option value="3">3 курс</option>
+                            <option value="4" selected>4 курс</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Статус</label>
+                        <select id="modal-status">
+                            <option value="studying" selected>Обучается</option>
+                            <option value="graduated">Выпустился</option>
+                            <option value="expelled">Отчислен</option>
+                            <option value="academic_leave">Академотпуск</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Фотография</label>
+                        <div class="photo-upload-area" id="photo-upload-area">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Нажмите для загрузки фото</p>
+                            <p><small>Поддерживаемые форматы: JPG, PNG, GIF, WebP</small></p>
+                            <input type="file" id="modal-photo" accept="image/*" style="display: none;">
+                        </div>
+                        <div id="modal-photo-preview" style="margin-top: 15px;"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Описание *</label>
+                        <input type="text" id="modal-description" required placeholder="Краткое описание студента">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Навыки (через запятую)</label>
+                        <input type="text" id="modal-skills" placeholder="Python, JavaScript, React">
+                    </div>
+
+                    <div class="form-group">
+                        <label>GitHub</label>
+                        <input type="url" id="modal-github" placeholder="https://github.com/username">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Портфолио</label>
+                        <input type="url" id="modal-portfolio" placeholder="https://myportfolio.com">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary cancel-btn">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно для пользователя -->
+    <div id="user-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Добавить пользователя</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="user-modal-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Логин *</label>
+                        <input type="text" id="user-username" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Пароль *</label>
+                        <input type="password" id="user-password" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="user-email">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Роль</label>
+                        <select id="user-role">
+                            <option value="student">Студент</option>
+                            <option value="admin">Администратор</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary cancel-btn">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно подтверждения удаления -->
+    <div id="confirm-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Подтверждение</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message">Вы уверены, что хотите выполнить это действие?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="confirm-cancel">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Контейнер для уведомлений -->
+    <div id="notification-container"></div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
