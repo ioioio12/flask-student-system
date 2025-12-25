@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: flask-student-system
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    pythonVersion: "3.9.0"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
