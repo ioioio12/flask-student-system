@@ -1,1 +1,1 @@
-web: python3.9 server.py
+python-3.9.0
