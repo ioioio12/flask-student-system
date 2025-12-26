@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Студенты колледжа</title>
+
+    <!-- Основной стиль -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Open+Sans:wght@300;400;600&family=Segoe+UI:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка -->
+        <header>
+            <!-- Секция пользователя -->
+            <div id="user-section" class="user-section"></div>
+
+            <h1><i class="fas fa-user-graduate"></i> Наши студенты</h1>
+            <p>Карточки студентов с сохранением данных</p>
+
+            <div class="stats">
+                <!-- Статистика будет загружена динамически -->
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> Загрузка статистики...
+                </div>
+            </div>
+        </header>
+
+        <!-- Информация для неавторизованных пользователей -->
+        <div id="guest-info" class="edit-section" style="display: none;">
+            <div class="edit-panel">
+                <h3><i class="fas fa-info-circle"></i> Информация</h3>
+                <p class="edit-hint">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Для создания и редактирования карточек требуется войти в систему.
+                    <br>
+                    <small>Вы можете просматривать все карточки, но редактировать сможете только свою.</small>
+                </p>
+                <div class="auth-buttons" style="display: flex; gap: 15px; margin-top: 20px;">
+                    <button class="login-btn" onclick="window.studentSystem.showLoginModal()">
+                        <i class="fas fa-sign-in-alt"></i> Войти
+                    </button>
+                    <button class="register-btn" onclick="window.studentSystem.showRegisterModal()">
+                        <i class="fas fa-user-plus"></i> Регистрация
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Секция редактирования (показывается только авторизованным) -->
+        <div id="edit-section" class="edit-section" style="display: none;">
+            <div class="edit-panel">
+                <h3><i class="fas fa-edit"></i> Управление карточками</h3>
+
+                <!-- Поиск карточки для редактирования по ID -->
+                <div class="form-group" style="margin-bottom: 25px;">
+                    <label>Найти карточку для редактирования по ID:</label>
+                    <div class="input-with-button">
+                        <input type="number" id="edit-student-id" placeholder="Введите ID карточки" min="1" style="flex: 1;">
+                        <button type="button" class="btn btn-primary" onclick="window.studentSystem.openEditById()">
+                            <i class="fas fa-search"></i> Найти по ID
+                        </button>
+                    </div>
+                    <small style="display: block; margin-top: 8px; color: #666;">
+                        <i class="fas fa-info-circle"></i>
+                        <span id="edit-hint-text">Введите ID карточки, которую хотите отредактировать</span>
+                    </small>
+                </div>
+
+                <!-- Информация о текущей карточке пользователя -->
+                <div id="my-card-info" style="display: none; margin-top: 20px; padding: 15px; background: #f0f7ff; border-radius: 10px; border: 1px solid #cce5ff;">
+                    <h4 style="margin: 0 0 10px 0; color: #0066cc; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-user-check"></i> Ваша карточка
+                    </h4>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div id="my-card-photo" style="width: 50px; height: 50px; border-radius: 50%; background: #e6f2ff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #0066cc;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <strong id="my-card-name">Загрузка...</strong>
+                            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                                <span class="badge" id="my-card-course" style="background: #0066cc; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem;">
+                                    курс
+                                </span>
+                                <span class="badge" id="my-card-status" style="background: #28a745; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem;">
+                                    статус
+                                </span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="window.studentSystem.openEditMyCard()" style="padding: 8px 15px; font-size: 0.9rem;">
+                            <i class="fas fa-edit"></i> Редактировать
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Создание новой карточки (если у пользователя еще нет) -->
+                <div id="create-card-section" style="display: none; margin-top: 25px; padding-top: 20px; border-top: 1px solid #eee;">
+                    <h4 style="margin: 0 0 15px 0; color: #28a745; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-plus-circle"></i> Создать свою карточку
+                    </h4>
+                    <p style="color: #666; margin-bottom: 15px; font-size: 0.95rem;">
+                        У вас еще нет карточки студента. Создайте свою первую карточку!
+                    </p>
+                    <button class="btn btn-success" onclick="window.studentSystem.showCreateCardForm()" style="width: 100%; padding: 12px;">
+                        <i class="fas fa-user-plus"></i> Создать мою карточку
+                    </button>
+                </div>
+
+                <!-- Информация для админа -->
+                <div id="admin-info" style="display: none; margin-top: 25px; padding: 15px; background: #fff8e1; border-radius: 10px; border: 1px solid #ffe082;">
+                    <h4 style="margin: 0 0 10px 0; color: #ff9800; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-crown"></i> Права администратора
+                    </h4>
+                    <p style="color: #666; margin: 0; font-size: 0.95rem;">
+                        Вы администратор и можете редактировать все карточки студентов в системе.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Панель поиска и фильтров -->
+        <div class="search-panel" style="background: linear-gradient(145deg, #ffffff 0%, #f5f7fa 100%); border-radius: 20px; padding: 25px; margin-bottom: 30px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);">
+            <h3 style="margin-bottom: 20px; color: #2d3436; display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-search"></i> Поиск и фильтрация
+            </h3>
+
+            <div class="search-box" style="margin-bottom: 20px;">
+                <div class="input-with-button">
+                    <input type="text" id="search-input" placeholder="Поиск по имени, описанию, навыкам, ID или учреждению..." style="flex: 1; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 1rem;">
+                    <button type="button" class="btn btn-primary" id="search-button">
+                        <i class="fas fa-search"></i> Поиск
+                    </button>
+                </div>
+            </div>
+
+            <div class="filter-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div class="form-group">
+                    <label>Фильтр по курсу:</label>
+                    <div class="filters" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        <button class="filter-btn active" data-filter="all">Все</button>
+                        <button class="filter-btn" data-filter="1">1 курс</button>
+                        <button class="filter-btn" data-filter="2">2 курс</button>
+                        <button class="filter-btn" data-filter="3">3 курс</button>
+                        <button class="filter-btn" data-filter="4">4 курс</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Фильтр по статусу:</label>
+                    <select id="status-filter" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 1rem;">
+                        <option value="all">Все статусы</option>
+                        <option value="studying">Обучается</option>
+                        <option value="graduated">Выпустился</option>
+                        <option value="expelled">Отчислен</option>
+                        <option value="academic_leave">Академотпуск</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Фильтр по учреждению:</label>
+                    <select id="institution-filter" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 1rem;">
+                        <option value="all">Все учреждения</option>
+                        <!-- Учреждения будут загружены динамически -->
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <button class="btn btn-secondary" id="clear-filters-btn">
+                    <i class="fas fa-times"></i> Сбросить все фильтры
+                </button>
+                <div id="search-count" style="color: #666; font-size: 0.9rem;">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="search-count-text">Загрузка...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Информация о фильтрации -->
+        <div id="filter-info" style="text-align: center; margin: 15px 0; color: #666; font-size: 0.9rem;">
+            <i class="fas fa-info-circle"></i>
+            <span id="filter-text">Загрузка студентов...</span>
+        </div>
+
+        <!-- Карточки студентов -->
+        <div class="cards-container" id="cards-container">
+            <!-- Сюда загрузятся карточки -->
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i> Загрузка студентов...
+            </div>
+        </div>
+
+        <!-- Быстрые действия -->
+<div style="display: flex; justify-content: center; gap: 20px; margin: 30px 0; flex-wrap: wrap;">
+    <button class="btn btn-primary" onclick="window.studentSystem.loadStudents()">
+        <i class="fas fa-sync-alt"></i> Обновить список
+    </button>
+    <button class="btn btn-secondary" onclick="window.studentSystem.clearFilters()">
+        <i class="fas fa-filter"></i> Сбросить фильтры
+    </button>
+    <a href="/add-student" class="btn btn-success">
+        <i class="fas fa-plus"></i> Добавить студента
+    </a>
+</div>
+
+        <!-- Футер -->
+        <footer>
+            <p><i class="fas fa-database"></i> Все данные сохраняются на сервере</p>
+            <p>Всего студентов: <span id="footer-count">0</span></p>
+            <p style="margin-top: 10px; font-size: 0.9rem; color: #666;">
+                <i class="fas fa-info-circle"></i>
+                Карточка текущего пользователя всегда отображается первой
+            </p>
+        </footer>
+    </div>
+
+    <!-- Форма добавления студента -->
+    <div class="add-form" style="display: none;">
+        <!-- Код формы остается без изменений -->
+    </div>
+
+
+    <!-- Модальное окно для создания/редактирования карточки пользователя -->
+    <div id="my-card-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-edit"></i> <span id="my-card-modal-title">Редактирование карточки</span></h3>
+                <button class="modal-close" onclick="window.studentSystem.closeMyCardModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="my-card-form">
+                    <div class="form-group">
+                        <label>Имя и фамилия *</label>
+                        <input type="text" id="my-card-name-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Образовательное учреждение *</label>
+                        <input type="text" id="my-card-institution-input" required placeholder="Колледж информационных технологий №1">
+                    </div>
+                    <div class="form-group">
+                        <label>Курс *</label>
+                        <select id="my-card-course-select" required>
+                            <option value="1">1 курс</option>
+                            <option value="2">2 курс</option>
+                            <option value="3">3 курс</option>
+                            <option value="4">4 курс</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Статус</label>
+                        <select id="my-card-status-select">
+                            <option value="studying">Обучается</option>
+                            <option value="graduated">Выпустился</option>
+                            <option value="expelled">Отчислен</option>
+                            <option value="academic_leave">Академотпуск</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Описание *</label>
+                        <textarea id="my-card-description" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Навыки (через запятую)</label>
+                        <input type="text" id="my-card-skills" placeholder="Python, JavaScript, HTML">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="window.studentSystem.closeMyCardModal()">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Сохранить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно входа -->
+    <div id="login-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-sign-in-alt"></i> Вход в систему</h3>
+                <button class="modal-close" onclick="window.studentSystem.closeLoginModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 20px;">
+                    <small style="color: #666; display: block; margin-bottom: 10px;">Тестовые пользователи:</small>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; font-size: 0.9rem;">
+                        <div><strong>Админ:</strong> admin / admin123</div>
+                        <div><strong>Студент:</strong> student1 / student123</div>
+                    </div>
+                </div>
+                <form id="modal-login-form">
+                    <div class="form-group">
+                        <label>Логин</label>
+                        <input type="text" id="modal-username" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Пароль</label>
+                        <input type="password" id="modal-password" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="window.studentSystem.closeLoginModal()">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> Войти
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно регистрации -->
+    <div id="register-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-plus"></i> Регистрация</h3>
+                <button class="modal-close" onclick="window.studentSystem.closeRegisterModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="modal-register-form">
+                    <div class="form-group">
+                        <label>Логин *</label>
+                        <input type="text" id="reg-username" required minlength="3">
+                        <small style="display: block; margin-top: 5px; color: #666;">Минимум 3 символа</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Пароль *</label>
+                        <input type="password" id="reg-password" required minlength="6">
+                        <small style="display: block; margin-top: 5px; color: #666;">Минимум 6 символов</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Email (необязательно)</label>
+                        <input type="email" id="reg-email">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="window.studentSystem.closeRegisterModal()">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Зарегистрироваться
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Стили для дополнительных элементов -->
+    <style>
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4091 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #009688 0%, #8bc34a 100%);
+            transform: translateY(-2px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .info-box {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Стили для образовательного учреждения */
+        .card-institution {
+            color: #666;
+            font-size: 0.9rem;
+            margin: 8px 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-institution i {
+            color: #667eea;
+        }
+
+        /* В модальном окне просмотра */
+        .institution-info {
+            margin-top: 10px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .institution-info i {
+            color: #667eea;
+        }
+
+        /* Адаптивность для быстрых действий */
+        @media (max-width: 768px) {
+            .btn {
+                width: 100%;
+                justify-content: center;
+                margin-bottom: 10px;
+            }
+
+            .info-box > div {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+    <script src="script.js"></script>
+</body>
+</html>
