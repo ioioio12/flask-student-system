@@ -1,0 +1,5 @@
+Flask
+Flask-CORS
+Pillow
+gunicorn
+psycopg2-binary
