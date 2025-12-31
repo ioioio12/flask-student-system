@@ -1336,6 +1336,158 @@ def upload_photo():
         return jsonify({"error": str(e)}), 500
 
 
+# ========== ПРИНУДИТЕЛЬНАЯ ИНИЦИАЛИЗАЦИЯ ДЛЯ RENDER ==========
+
+def init_render():
+    """Функция для принудительной инициализации на Render"""
+    print("\n" + "=" * 60)
+    print("🚀 ПРИНУДИТЕЛЬНАЯ ИНИЦИАЛИЗАЦИЯ ДЛЯ RENDER")
+    print("=" * 60)
+
+    # Проверяем, работает ли на Render (есть DATABASE_URL и PORT)
+    is_render = os.environ.get('DATABASE_URL') and os.environ.get('PORT')
+
+    if is_render:
+        print("📍 Обнаружена среда Render")
+        print(f"📊 Режим работы: PostgreSQL")
+
+        # Принудительно инициализируем PostgreSQL
+        try:
+            import psycopg2
+            import urllib.parse
+
+            DATABASE_URL = os.environ.get('DATABASE_URL')
+            parsed_url = urllib.parse.urlparse(DATABASE_URL)
+
+            print(f"📡 Подключаюсь к БД: {parsed_url.hostname}")
+
+            conn = psycopg2.connect(
+                database=parsed_url.path[1:],
+                user=parsed_url.username,
+                password=parsed_url.password,
+                host=parsed_url.hostname,
+                port=parsed_url.port,
+                sslmode='require'
+            )
+
+            cursor = conn.cursor()
+
+            # 1. Создаем таблицу users
+            print("🔨 Создаю таблицу users...")
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    username VARCHAR(50) UNIQUE NOT NULL,
+                    password VARCHAR(255) NOT NULL,
+                    role VARCHAR(20) DEFAULT 'student',
+                    email VARCHAR(100),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+
+            # 2. Создаем таблицу students
+            print("🔨 Создаю таблицу students...")
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS students (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    course INTEGER NOT NULL,
+                    status VARCHAR(20) DEFAULT 'studying',
+                    description TEXT,
+                    full_info TEXT,
+                    institution VARCHAR(255),
+                    skills JSONB DEFAULT '[]',
+                    links JSONB DEFAULT '{}',
+                    photo VARCHAR(255) DEFAULT '/images/default.jpg',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    user_id INTEGER
+                )
+            ''')
+
+            conn.commit()
+
+            # 3. Проверяем и добавляем тестовые данные
+            cursor.execute("SELECT COUNT(*) FROM users")
+            user_count = cursor.fetchone()[0]
+
+            if user_count == 0:
+                print("👤 Добавляю тестовых пользователей...")
+                admin_hash = hashlib.sha256("admin123".encode()).hexdigest()
+                student_hash = hashlib.sha256("student123".encode()).hexdigest()
+
+                cursor.execute('''
+                    INSERT INTO users (username, password, role, email)
+                    VALUES (%s, %s, %s, %s)
+                ''', ('admin', admin_hash, 'admin', 'admin@college.ru'))
+
+                cursor.execute('''
+                    INSERT INTO users (username, password, role, email)
+                    VALUES (%s, %s, %s, %s)
+                ''', ('student1', student_hash, 'student', 'student1@college.ru'))
+
+                print("✅ Тестовые пользователи добавлены")
+
+                # Добавляем тестового студента
+                cursor.execute('''
+                    INSERT INTO students (name, course, status, description, full_info, institution, skills, links)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ''', (
+                    'Иван Иванов', 1, 'studying',
+                    'Backend-разработчик, увлекается Python и SQL',
+                    'Студент 1 курса, изучает Python и базы данных.',
+                    'Колледж информационных технологий №1',
+                    json.dumps(['Python', 'SQL', 'PostgreSQL']),
+                    json.dumps({"github": "https://github.com/ivanov"})
+                ))
+                print("✅ Тестовый студент добавлен")
+
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+            print("✅ PostgreSQL инициализирован на Render!")
+            print("=" * 60 + "\n")
+
+        except Exception as e:
+            print(f"❌ Ошибка инициализации PostgreSQL на Render: {e}")
+            import traceback
+            traceback.print_exc()
+            print("=" * 60 + "\n")
+    else:
+        print("📍 Локальная среда, инициализация через init_data()")
+        print("=" * 60 + "\n")
+
+
+# ЗАПУСКАЕМ ИНИЦИАЛИЗАЦИЮ ПРИ ИМПОРТЕ (для Render)
+init_render()
+
+# ========== ЗАПУСК ==========
+
+if __name__ == '__main__':
+    # Для локального запуска
+    init_data()
+
+    print("\n" + "=" * 60)
+    print("🚀 СЕРВЕР ЗАПУЩЕН (локально)!")
+    print("=" * 60)
+
+    if USE_POSTGRESQL:
+        print("📍 Для проверки БД откройте: /api/debug")
+        print("📍 Для принудительной инициализации: POST /api/init-db")
+
+    print("📍 Основная страница: /")
+    print("📍 Добавить студента: /add-student")
+    print("📍 Админ-панель:      /admin")
+    print("\n👤 ТЕСТОВЫЕ ПОЛЬЗОВАТЕЛИ:")
+    print("   Админ:    логин: admin    пароль: admin123")
+    print("   Студент:  логин: student1 пароль: student123")
+    print("=" * 60 + "\n")
+
+    # На Render используем порт из переменной окружения
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
+
 # ========== ЗАПУСК ==========
 
 if __name__ == '__main__':
