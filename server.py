@@ -15,6 +15,11 @@ CORS(app, supports_credentials=True, origins=[
     'http://localhost:5000',
     'https://flask-student-system-ag1l.onrender.com'
 ])
+
+CLOUDINARY_CLOUD_NAME = os.environ.get('Untitled')
+CLOUDINARY_API_KEY = os.environ.get('256878521711416')
+CLOUDINARY_API_SECRET = os.environ.get('bZ75vLO70KQ6qa4S34Ak9FSqXsI')
+
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-this')
 app.config['UPLOAD_FOLDER'] = 'public/images/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
@@ -1294,6 +1299,63 @@ def debug_info():
     return jsonify(info)
 
 
+def upload_to_cloudinary(file):
+    """Загрузить фото в Cloudinary"""
+    if not all([CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET]):
+        # Fallback на локальное сохранение
+        return upload_local(file)
+
+    try:
+        import cloudinary
+        import cloudinary.uploader
+        import cloudinary.api
+
+        cloudinary.config(
+            cloud_name=CLOUDINARY_CLOUD_NAME,
+            api_key=CLOUDINARY_API_KEY,
+            api_secret=CLOUDINARY_API_SECRET,
+            secure=True
+        )
+
+        # Загружаем в Cloudinary
+        result = cloudinary.uploader.upload(
+            file,
+            folder="student_system",
+            transformation=[
+                {"width": 800, "height": 800, "crop": "limit"},
+                {"quality": "auto:good"}
+            ]
+        )
+
+        return result['secure_url']
+
+    except Exception as e:
+        print(f"❌ Ошибка Cloudinary: {e}")
+        return upload_local(file)
+
+
+def upload_local(file):
+    """Загрузить фото локально (для разработки)"""
+    filename = secure_filename(file.filename)
+    unique_filename = f"{uuid.uuid4().hex}_{filename}"
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+
+    # Создаем папку если нет
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+    # Сохраняем файл
+    file.save(filepath)
+
+    # Сжимаем изображение
+    try:
+        img = Image.open(filepath)
+        img.thumbnail((800, 800))
+        img.save(filepath, optimize=True, quality=85)
+    except:
+        pass
+
+    return f"/images/uploads/{unique_filename}"
+
 # ========== ФОТО ЗАГРУЗКА ==========
 
 @app.route('/api/upload-photo', methods=['POST'])
@@ -1309,24 +1371,14 @@ def upload_photo():
             return jsonify({"error": "Не выбран файл"}), 400
 
         if file and allowed_file(file.filename):
-            # Создаем уникальное имя файла
-            filename = secure_filename(file.filename)
-            unique_filename = f"{uuid.uuid4().hex}_{filename}"
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+            # Выбираем способ загрузки в зависимости от окружения
+            if USE_POSTGRESQL and CLOUDINARY_CLOUD_NAME:
+                # На Render с Cloudinary
+                photo_url = upload_to_cloudinary(file)
+            else:
+                # Локальная разработка
+                photo_url = upload_local(file)
 
-            # Сохраняем файл
-            file.save(filepath)
-
-            # Опционально: изменяем размер фото
-            try:
-                img = Image.open(filepath)
-                # Максимальный размер 800x800
-                img.thumbnail((800, 800))
-                img.save(filepath, optimize=True, quality=85)
-            except Exception as img_error:
-                print(f"⚠️ Не удалось обработать изображение: {img_error}")
-
-            photo_url = f"/images/uploads/{unique_filename}"
             return jsonify({"photoUrl": photo_url})
         else:
             return jsonify({"error": "Неподдерживаемый формат файла"}), 400
