@@ -182,13 +182,131 @@ else:
     print("ℹ️ Используется режим JSON (локальная разработка)")
 
 
+# ========== ПРИНУДИТЕЛЬНАЯ ИНИЦИАЛИЗАЦИЯ ДЛЯ RENDER ==========
+
+def ensure_postgresql_tables():
+    """Гарантированное создание таблиц в PostgreSQL (для Render)"""
+    if not USE_POSTGRESQL:
+        return
+
+    print("\n🔄 ГАРАНТИРОВАННОЕ СОЗДАНИЕ ТАБЛИЦ ДЛЯ RENDER...")
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # 1. Проверяем, существуют ли таблицы
+        cursor.execute("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'users'
+            ) as users_exists,
+            EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'students'
+            ) as students_exists;
+        """)
+
+        exists = cursor.fetchone()
+        users_exists = exists[0]
+        students_exists = exists[1]
+
+        print(f"📊 Статус таблиц: users={users_exists}, students={students_exists}")
+
+        # 2. Если таблиц нет - создаем
+        if not users_exists:
+            print("🔨 Создаю таблицу users...")
+            cursor.execute('''
+                CREATE TABLE users (
+                    id SERIAL PRIMARY KEY,
+                    username VARCHAR(50) UNIQUE NOT NULL,
+                    password VARCHAR(255) NOT NULL,
+                    role VARCHAR(20) DEFAULT 'student',
+                    email VARCHAR(100),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            print("✅ Таблица users создана")
+
+        if not students_exists:
+            print("🔨 Создаю таблицу students...")
+            cursor.execute('''
+                CREATE TABLE students (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    course INTEGER NOT NULL,
+                    status VARCHAR(20) DEFAULT 'studying',
+                    description TEXT,
+                    full_info TEXT,
+                    institution VARCHAR(255),
+                    skills JSONB DEFAULT '[]',
+                    links JSONB DEFAULT '{}',
+                    photo VARCHAR(255) DEFAULT '/images/default.jpg',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    user_id INTEGER
+                )
+            ''')
+            print("✅ Таблица students создана")
+
+        conn.commit()
+
+        # 3. Проверяем, есть ли тестовые пользователи
+        cursor.execute("SELECT COUNT(*) FROM users")
+        user_count = cursor.fetchone()[0]
+
+        if user_count == 0:
+            print("👤 Добавляю тестовых пользователей...")
+            admin_hash = hashlib.sha256("admin123".encode()).hexdigest()
+            student_hash = hashlib.sha256("student123".encode()).hexdigest()
+
+            cursor.execute('''
+                INSERT INTO users (username, password, role, email)
+                VALUES (%s, %s, %s, %s)
+            ''', ('admin', admin_hash, 'admin', 'admin@college.ru'))
+
+            cursor.execute('''
+                INSERT INTO users (username, password, role, email)
+                VALUES (%s, %s, %s, %s)
+            ''', ('student1', student_hash, 'student', 'student1@college.ru'))
+
+            print("✅ Тестовые пользователи добавлены")
+
+            # Добавляем тестового студента
+            cursor.execute('''
+                INSERT INTO students (name, course, status, description, full_info, institution, skills, links)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ''', (
+                'Иван Иванов', 1, 'studying',
+                'Backend-разработчик, увлекается Python и SQL',
+                'Студент 1 курса, изучает Python и базы данных.',
+                'Колледж информационных технологий №1',
+                json.dumps(['Python', 'SQL', 'PostgreSQL']),
+                json.dumps({"github": "https://github.com/ivanov"})
+            ))
+            print("✅ Тестовый студент добавлен")
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        print("✅ Таблицы PostgreSQL гарантированно созданы и проверены")
+
+    except Exception as e:
+        print(f"❌ Критическая ошибка при создании таблиц: {e}")
+        import traceback
+        traceback.print_exc()
+
 def init_data():
     """Инициализация данных"""
     print("\n🔧 ИНИЦИАЛИЗАЦИЯ ДАННЫХ")
 
     if USE_POSTGRESQL:
         try:
-            init_postgresql()
+            # На Render используем гарантированное создание таблиц
+            ensure_postgresql_tables()
         except Exception as e:
             print(f"⚠️ Не удалось инициализировать PostgreSQL: {e}")
             print("⚠️ Попытка продолжить работу в JSON режиме...")
@@ -963,6 +1081,32 @@ def register():
         print(f"❌ Ошибка регистрации: {e}")
         return jsonify({"error": str(e)}), 500
 
+
+@app.route('/api/init-db-force', methods=['POST'])
+def init_database_force():
+    """Принудительная инициализация базы данных с детальным логом"""
+    try:
+        if not USE_POSTGRESQL:
+            return jsonify({"error": "Только для PostgreSQL режима"}), 400
+
+        print("🔧 Запуск принудительной инициализации БД...")
+
+        ensure_postgresql_tables()
+
+        return jsonify({
+            "success": True,
+            "message": "База данных гарантированно инициализирована",
+            "action": "tables_ensured"
+        })
+
+    except Exception as e:
+        print(f"❌ Критическая ошибка инициализации: {e}")
+        import traceback
+        return jsonify({
+            "error": str(e),
+            "details": traceback.format_exc(),
+            "success": False
+        }), 500
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
